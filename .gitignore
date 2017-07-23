@@ -99,3 +99,11 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+# serverless
+secret
+package.json
+.requirements
+.serverless
+.vagrant
+node_modules
