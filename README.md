@@ -29,7 +29,7 @@ Basically the process will extract `samplereq.json` content and devide it into t
 - **Charge**
 - **Card**
 
-For more information about the `samplereq.json`, please refer to [this page](https://stripe.com/docs/api#charge_object).
+For more information about the `samplereq.json`, please refer to [this page](https://stripe.com/docs/api#charge_object). 
 
 If you see your database after a sucessfull API hit, there are 5 tables there.
 
