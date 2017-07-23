@@ -1,0 +1,4 @@
+flatten_json
+dataset
+psycopg2
+s3fs
