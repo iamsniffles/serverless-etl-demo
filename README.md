@@ -1,6 +1,8 @@
 # Serverless ETL Demo
 
-An example how to orchestrate multiple AWS lambda functions to do basic ETL process via AWS Step Functions.
+An example how to orchestrate multiple AWS lambda functions to do basic ETL process via AWS Step Functions triggered by API Gateway.
+
+## How To
 
 To reproduce this demo:
 
@@ -18,4 +20,26 @@ To reproduce this demo:
 7. Run `cd /vagrant` to change your working directory to cloned repo on dev VM
 8. Run `sls deploy`
 9. Hit the API endpoint (that you get from info output after sucessfull deployment) with content from `samplereq.json`
+
+## Data Model
+
+Basically the process will extract `samplereq.json` content and devide it into three main object.
+
+- **Event**
+- **Charge**
+- **Card**
+
+For more information about the `samplereq.json`, please refer to [this page](https://stripe.com/docs/api#charge_object).
+
+--
+
+If you see your database after a sucessfull API hit, there are 5 tables there.
+
+- `event`
+- `charge`
+- `cc`
+- `event_map`
+- `event_raw`
+
+`event`, `charge`, and `cc` are mapped by `event_map`. `event_raw` contains flattened `samplereq.json`. `event_raw` was created to facilitate type of data analyst who would like to see all data into one table whatever it takes.
 
