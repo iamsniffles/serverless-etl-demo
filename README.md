@@ -29,8 +29,6 @@ Basically the process will extract `samplereq.json` content and devide it into t
 - **Charge**
 - **Card**
 
-For more information about the `samplereq.json`, please refer to [this page](https://stripe.com/docs/api#charge_object). 
-
 If you see your database after a sucessfull API hit, there are 5 tables there.
 
 - `event`
@@ -40,4 +38,6 @@ If you see your database after a sucessfull API hit, there are 5 tables there.
 - `event_raw`
 
 `event`, `charge`, and `cc` are mapped by `event_map`. `event_raw` contains flattened `samplereq.json`. `event_raw` was created to facilitate type of data analyst who would like to see all data into one table whatever it takes.
+
+*For more information about the `samplereq.json`, please refer to [this page](https://stripe.com/docs/api#charge_object).*
 
