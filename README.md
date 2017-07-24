@@ -14,6 +14,7 @@ To reproduce this demo:
 	- `AWS_SECRET` with your ***AWS Secret Access Key***
 	- `DBURL` with your complete ***PostgresSQL*** endpoint (e.g `postgres://user:pass@i-love-erdinger.rds.amazonaws.com:5432/dbname`)
 	- `AWSID` with your ***AWS account ID***
+	- `S3BUCKET` with you ***S3 bucket*** name
 	- `TZONE` with your Linux time zone preference (e.g `Asia/Jakarta`)
 5. Run `vagrant up --provision` command to build the dev VM
 6. Run `vagrant ssh` to enter the dev VM
@@ -40,4 +41,3 @@ There's no need to define target tables on your database. The target tables will
 `event`, `charge`, and `cc` are representation of three main objects mentioned before. Those three tables are mapped by `event_map` table. `event_raw` table contains flattened `samplereq.json`. `event_raw` table was created to facilitate type of data analyst who would like to see all data into one table whatever it takes.
 
 *For more information about the `samplereq.json`, please refer to [this page](https://stripe.com/docs/api#charge_object).*
-

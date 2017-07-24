@@ -13,7 +13,7 @@ provider:
 
 custom:
   accountId: ${env:AWSID}
-  bucket: stripe-card
+  bucket: ${env:S3BUCKET}
 
 plugins:
   - serverless-step-functions
