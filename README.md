@@ -29,7 +29,7 @@ Basically the process will extract `samplereq.json` content and devide it into t
 - **Charge**
 - **Card**
 
-There's no need to define target tables on your database. The tables will be created during ingestion process if not exists yet (thanks to [dataset](https://dataset.readthedocs.io/en/latest/) package!). And if you see your database after a sucessfull API hit, there are 5 tables there.
+There's no need to define target tables on your database. The target tables will be created during ingestion process if not exists yet (thanks to [dataset](https://dataset.readthedocs.io/en/latest/) package!). And if you see your database after a sucessfull API hit, there are 5 tables there.
 
 - `event`
 - `charge`
