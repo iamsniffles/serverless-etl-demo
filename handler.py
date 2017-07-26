@@ -2,9 +2,16 @@ import os
 import json
 import flatten_json
 import dataset
+import boto3
 import s3fs
 
 from copy import deepcopy
+
+def executor(event, context):
+    client = boto3.client('stepfunctions', region_name=os.environ['REG'])
+    client.start_execution(stateMachineArn=os.environ['ARN'], input=json.dumps(event))
+
+    return client.describe_execution(executionArn=os.environ['ARN'])
 
 def extractRawEvent(event, context):
     return flatten_json.flatten(event, '_')

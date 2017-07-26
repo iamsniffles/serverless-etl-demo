@@ -4,6 +4,8 @@
 # YOUR AWS ACCOUNT INFORMATION
 AWS_KEY = ''
 AWS_SECRET = ''
+API_KEY = ''
+REG = ''
 DBURL = ''
 AWSID = ''
 S3BUCKET = ''
@@ -23,9 +25,11 @@ Vagrant.configure('2') do |config|
   echo 'export PATH="~/.pyenv/bin:$PATH"' >> /home/vagrant/.bash_profile
   echo 'eval "$(pyenv init -)"' >> /home/vagrant/.bash_profile
   echo 'eval "$(pyenv virtualenv-init -)"' >> /home/vagrant/.bash_profile
+  echo 'export API_KEY=#{API_KEY}' >> /home/vagrant/.bash_profile
   echo 'export DBURL=#{DBURL}' >> /home/vagrant/.bash_profile
   echo 'export AWSID=#{AWSID}' >> /home/vagrant/.bash_profile
   echo 'export S3BUCKET=#{S3BUCKET}' >> /home/vagrant/.bash_profile
+  echo 'export REG=#{REG}' >> /home/vagrant/.bash_profile
   source ~/.bash_profile
   sudo apt-get update
   sudo apt-get -y install libbz2-dev libsqlite3-dev
