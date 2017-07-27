@@ -9,22 +9,28 @@ from copy import deepcopy
 
 def executor(event, context):
     client = boto3.client('stepfunctions', region_name=os.environ['REG'])
-    client.start_execution(stateMachineArn=os.environ['ARN'], input=json.dumps(event))
+    client.start_execution(
+        stateMachineArn='arn:aws:states:' + os.environ['REG']+ ':' + os.environ['AWSID'] + ':stateMachine:' + os.environ['ARN'],
+        input=json.dumps(event)
+    )
 
-    return client.describe_execution(executionArn=os.environ['ARN'])
+    return {
+        'statusCode': 200,
+        'body': 'Ingestion process triggered!'
+    }
 
 def extractRawEvent(event, context):
-    return flatten_json.flatten(event, '_')
+    return flatten_json.flatten(json.loads(event['body']), '_')
 
 def extractEvent(event, context):
-    result = deepcopy(event)
+    result = deepcopy(json.loads(event['body']))
     result.pop('data', None)
     result['event_id'] = result.pop('id')
 
     return result
 
 def extractCharge(event, context):
-    result = deepcopy(event)
+    result = deepcopy(json.loads(event['body']))
     result = result['data']['object']
     result.pop('source', None)
     result['charge_id'] = result.pop('id')
@@ -34,7 +40,7 @@ def extractCharge(event, context):
     return result
 
 def extractCard(event, context):
-    result = deepcopy(event)
+    result = deepcopy(json.loads(event['body']))
     result = result['data']['object']['source']
     result['cc_id'] = result.pop('id')
 
@@ -42,6 +48,7 @@ def extractCard(event, context):
 
 def extractEventMap(event, context):
     result = {}
+    event = json.loads(event['body'])
     result['event_id'] = event['id'] if 'id' in event else ''
     result['charge_id'] = event['data']['object']['id'] if 'id' in event else ''
     result['cc_id'] = event['data']['object']['source']['id'] if 'id' in event else ''

@@ -3,19 +3,18 @@ service:                                stripe
 provider:
   name:                                 aws
   runtime:                              python3.6
-  stage:                                dev
   region:                               ${env:REG}
-  # apiKeys:
-  #   - ${env:API_KEY}
+  apiKeys:
+    - ${env:API_KEY}
   iamRoleStatements:
     - Effect:                           Allow
       Action:
-        - states:StartExecution
-      Resource:                         ${self:resources.Outputs.Ingestion.Value}
+        - 's3:*'
+      Resource:                         '*'
     - Effect:                           Allow
       Action:
-        - s3:PutObject
-      Resource:                         "*"
+        - 'states:*'
+      Resource:                         '*'
 
 custom:
   accountId:                            ${env:AWSID}
@@ -25,12 +24,14 @@ functions:
     handler:                            handler.executor
     environment:
       REG:                              ${env:REG}
+      AWSID:                            ${env:AWSID}
       ARN:                              ${self:resources.Outputs.Ingestion.Value}
     events:
       - http:
-          path:                         ingest
+          path:                         stripe/ingest
           method:                       POST
-          # private:                      true
+          private:                      true
+      - s3:                             ${env:S3BUCKET}-${opt:stage}
   extractRawEvent:
     handler:                            handler.extractRawEvent
   extractEvent:
@@ -64,13 +65,13 @@ functions:
   writeCardCSVS3:
     handler:                            handler.writeCardCSVS3
     environment:
-      BUCKET:                           ${env:S3BUCKET}
+      BUCKET:                           ${env:S3BUCKET}-${opt:stage}
 
 stepFunctions:
   stateMachines:
     ingestion:
+      name:                             Ingestion
       definition:
-        name:                           Ingestion
         StartAt:                        Parallel
         States:
           Parallel:
@@ -143,9 +144,9 @@ stepFunctions:
 resources:
   Outputs:
     Ingestion:
-      Description: The ARN of the state machine
+      Description:                      The ARN of the state machine
       Value:
-        Ref: Ingestion
+        Fn::GetAtt:                     ["Ingestion", "Name"]
 
 plugins:
   - serverless-step-functions
