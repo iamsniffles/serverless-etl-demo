@@ -2,11 +2,13 @@
 # vi: set ft=ruby :
 
 # YOUR AWS ACCOUNT INFORMATION
+AWSID = ''
+REG = ''
 AWS_KEY = ''
 AWS_SECRET = ''
-DBURL = ''
-AWSID = ''
 S3BUCKET = ''
+DBURL = ''
+API_KEY = ''
 
 # YOUR VM TIMEZONE
 TZONE = 'Asia/Jakarta'
@@ -23,9 +25,11 @@ Vagrant.configure('2') do |config|
   echo 'export PATH="~/.pyenv/bin:$PATH"' >> /home/vagrant/.bash_profile
   echo 'eval "$(pyenv init -)"' >> /home/vagrant/.bash_profile
   echo 'eval "$(pyenv virtualenv-init -)"' >> /home/vagrant/.bash_profile
+  echo 'export API_KEY=#{API_KEY}' >> /home/vagrant/.bash_profile
   echo 'export DBURL=#{DBURL}' >> /home/vagrant/.bash_profile
   echo 'export AWSID=#{AWSID}' >> /home/vagrant/.bash_profile
   echo 'export S3BUCKET=#{S3BUCKET}' >> /home/vagrant/.bash_profile
+  echo 'export REG=#{REG}' >> /home/vagrant/.bash_profile
   source ~/.bash_profile
   sudo apt-get update
   sudo apt-get -y install libbz2-dev libsqlite3-dev
@@ -39,7 +43,7 @@ Vagrant.configure('2') do |config|
   sudo npm init -y
   sudo npm install --save serverless-step-functions
   sudo npm install --save serverless-python-requirements
-  serverless config credentials --provider aws --key #{AWS_KEY} --secret #{AWS_SECRET}
+  serverless config credentials --provider aws --stage dev --key #{AWS_KEY} --secret #{AWS_SECRET}
   SCRIPT
 
   config.vm.provision 'shell', inline: $script, privileged: false

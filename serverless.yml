@@ -1,134 +1,153 @@
-service: stripe-ingest
+service:                                stripe
 
 provider:
-  name: aws
-  runtime: python3.6
-  stage: dev
-  region: us-east-1
+  name:                                 aws
+  runtime:                              python3.6
+  region:                               ${env:REG}
+  apiKeys:
+    - ${env:API_KEY}
   iamRoleStatements:
-    - Effect: Allow
+    - Effect:                           Allow
       Action:
-        - s3:PutObject
-      Resource: "arn:aws:s3:::${self:custom.bucket}/*"
+        - 's3:*'
+      Resource:                         '*'
+    - Effect:                           Allow
+      Action:
+        - 'states:*'
+      Resource:                         '*'
 
 custom:
-  accountId: ${env:AWSID}
-  bucket: ${env:S3BUCKET}
+  accountId:                            ${env:AWSID}
+
+functions:
+  executor:
+    handler:                            handler.executor
+    environment:
+      REG:                              ${env:REG}
+      AWSID:                            ${env:AWSID}
+      ARN:                              ${self:resources.Outputs.Ingestion.Value}
+    events:
+      - http:
+          path:                         stripe/ingest
+          method:                       POST
+          private:                      true
+      - s3:                             ${env:S3BUCKET}-${opt:stage}
+  extractRawEvent:
+    handler:                            handler.extractRawEvent
+  extractEvent:
+    handler:                            handler.extractEvent
+  extractCharge:
+    handler:                            handler.extractCharge
+  extractCard:
+    handler:                            handler.extractCard
+  extractEventMap:
+    handler:                            handler.extractEventMap
+  upsertRawEvent:
+    handler:                            handler.upsertRawEvent
+    environment:
+      DB_URL:                           ${env:DBURL}
+  upsertEvent:
+    handler:                            handler.upsertEvent
+    environment:
+      DB_URL:                           ${env:DBURL}
+  upsertCharge:
+    handler:                            handler.upsertCharge
+    environment:
+      DB_URL:                           ${env:DBURL}
+  upsertCard:
+    handler:                            handler.upsertCard
+    environment:
+      DB_URL:                           ${env:DBURL}
+  upsertEventMap:
+    handler:                            handler.upsertEventMap
+    environment:
+      DB_URL:                           ${env:DBURL}
+  writeCardCSVS3:
+    handler:                            handler.writeCardCSVS3
+    environment:
+      BUCKET:                           ${env:S3BUCKET}-${opt:stage}
+
+stepFunctions:
+  stateMachines:
+    ingestion:
+      name:                             Ingestion
+      definition:
+        StartAt:                        Parallel
+        States:
+          Parallel:
+            Type:                       Parallel
+            End:                        true
+            Branches:
+            - StartAt:                  extractRawEvent
+              States:
+                extractRawEvent:
+                  Type:                 Task
+                  Resource:             arn:aws:lambda:${env:REG}:${env:AWSID}:function:${self:service}-${opt:stage}-extractRawEvent
+                  Next:                 upsertRawEvent
+                upsertRawEvent:
+                  Type:                 Task
+                  Resource:             arn:aws:lambda:${env:REG}:${env:AWSID}:function:${self:service}-${opt:stage}-upsertRawEvent
+                  End:                  true
+            - StartAt:                  extractEvent
+              States:
+                extractEvent:
+                  Type:                 Task
+                  Resource:             arn:aws:lambda:${env:REG}:${env:AWSID}:function:${self:service}-${opt:stage}-extractEvent
+                  Next:                 upsertEvent
+                upsertEvent:
+                  Type:                 Task
+                  Resource:             arn:aws:lambda:${env:REG}:${env:AWSID}:function:${self:service}-${opt:stage}-upsertEvent
+                  End:                  true
+            - StartAt:                  extractCharge
+              States:
+                extractCharge:
+                  Type:                 Task
+                  Resource:             arn:aws:lambda:${env:REG}:${env:AWSID}:function:${self:service}-${opt:stage}-extractCharge
+                  Next:                 upsertCharge
+                upsertCharge:
+                  Type:                 Task
+                  Resource:             arn:aws:lambda:${env:REG}:${env:AWSID}:function:${self:service}-${opt:stage}-upsertCharge
+                  End:                  true
+            - StartAt:                  extractCard
+              States:
+                extractCard:
+                  Type:                 Task
+                  Resource:             arn:aws:lambda:${env:REG}:${env:AWSID}:function:${self:service}-${opt:stage}-extractCard
+                  Next:                 parallelUpsertCard
+                parallelUpsertCard:
+                  Type:                 Parallel
+                  End:                  true
+                  Branches:
+                    - StartAt:          upsertCard
+                      States:
+                        upsertCard:
+                          Type:         Task
+                          Resource:     arn:aws:lambda:${env:REG}:${env:AWSID}:function:${self:service}-${opt:stage}-upsertCard
+                          End:          true
+                    - StartAt:          writeCardCSVS3
+                      States:
+                        writeCardCSVS3:
+                          Type:         Task
+                          Resource:     arn:aws:lambda:${env:REG}:${env:AWSID}:function:${self:service}-${opt:stage}-writeCardCSVS3
+                          End:          true
+            - StartAt:                  extractEventMap
+              States:
+                extractEventMap:
+                  Type:                 Task
+                  Resource:             arn:aws:lambda:${env:REG}:${env:AWSID}:function:${self:service}-${opt:stage}-extractEventMap
+                  Next:                 upsertEventMap
+                upsertEventMap:
+                  Type:                 Task
+                  Resource:             arn:aws:lambda:${env:REG}:${env:AWSID}:function:${self:service}-${opt:stage}-upsertEventMap
+                  End:                  true
+
+resources:
+  Outputs:
+    Ingestion:
+      Description:                      The ARN of the state machine
+      Value:
+        Fn::GetAtt:                     ["Ingestion", "Name"]
 
 plugins:
   - serverless-step-functions
   - serverless-python-requirements
-
-functions:
-  extractRawEvent:
-    handler: handler.extractRawEvent
-  extractEvent:
-    handler: handler.extractEvent
-  extractCharge:
-    handler: handler.extractCharge
-  extractCard:
-    handler: handler.extractCard
-  extractEventMap:
-    handler: handler.extractEventMap
-  upsertRawEvent:
-    handler: handler.upsertRawEvent
-    environment:
-      DB_URL: ${env:DBURL}
-  upsertEvent:
-    handler: handler.upsertEvent
-    environment:
-      DB_URL: ${env:DBURL}
-  upsertCharge:
-    handler: handler.upsertCharge
-    environment:
-      DB_URL: ${env:DBURL}
-  upsertCard:
-    handler: handler.upsertCard
-    environment:
-      DB_URL: ${env:DBURL}
-  upsertEventMap:
-    handler: handler.upsertEventMap
-    environment:
-      DB_URL: ${env:DBURL}
-  writeCardCSVS3:
-    handler: handler.writeCardCSVS3
-    environment:
-      BUCKET: ${self:custom.bucket}
-
-stepFunctions:
-  stateMachines:
-    stripeETLStepFunctions:
-      events:
-        - http:
-            path: stripe/ingest
-            method: POST
-      definition:
-        Comment: "Step Functions for Stripe ETL Process"
-        StartAt: Parallel
-        States:
-          Parallel:
-            Type: Parallel
-            End: true
-            Branches:
-            - StartAt: extractRawEvent
-              States:
-                extractRawEvent:
-                  Type: Task
-                  Resource: arn:aws:lambda:${opt:region}:${self:custom.accountId}:function:${self:service}-${opt:stage}-extractRawEvent
-                  Next: upsertRawEvent
-                upsertRawEvent:
-                  Type: Task
-                  Resource: arn:aws:lambda:${opt:region}:${self:custom.accountId}:function:${self:service}-${opt:stage}-upsertRawEvent
-                  End: true
-            - StartAt: extractEvent
-              States:
-                extractEvent:
-                  Type: Task
-                  Resource: arn:aws:lambda:${opt:region}:${self:custom.accountId}:function:${self:service}-${opt:stage}-extractEvent
-                  Next: upsertEvent
-                upsertEvent:
-                  Type: Task
-                  Resource: arn:aws:lambda:${opt:region}:${self:custom.accountId}:function:${self:service}-${opt:stage}-upsertEvent
-                  End: true
-            - StartAt: extractCharge
-              States:
-                extractCharge:
-                  Type: Task
-                  Resource: arn:aws:lambda:${opt:region}:${self:custom.accountId}:function:${self:service}-${opt:stage}-extractCharge
-                  Next: upsertCharge
-                upsertCharge:
-                  Type: Task
-                  Resource: arn:aws:lambda:${opt:region}:${self:custom.accountId}:function:${self:service}-${opt:stage}-upsertCharge
-                  End: true
-            - StartAt: extractCard
-              States:
-                extractCard:
-                  Type: Task
-                  Resource: arn:aws:lambda:${opt:region}:${self:custom.accountId}:function:${self:service}-${opt:stage}-extractCard
-                  Next: parallelUpsertCard
-                parallelUpsertCard:
-                  Type: Parallel
-                  End: true
-                  Branches:
-                    - StartAt: upsertCard
-                      States:
-                        upsertCard:
-                          Type: Task
-                          Resource: arn:aws:lambda:${opt:region}:${self:custom.accountId}:function:${self:service}-${opt:stage}-upsertCard
-                          End: true
-                    - StartAt: writeCardCSVS3
-                      States:
-                        writeCardCSVS3:
-                          Type: Task
-                          Resource: arn:aws:lambda:${opt:region}:${self:custom.accountId}:function:${self:service}-${opt:stage}-writeCardCSVS3
-                          End: true
-            - StartAt: extractEventMap
-              States:
-                extractEventMap:
-                  Type: Task
-                  Resource: arn:aws:lambda:${opt:region}:${self:custom.accountId}:function:${self:service}-${opt:stage}-extractEventMap
-                  Next: upsertEventMap
-                upsertEventMap:
-                  Type: Task
-                  Resource: arn:aws:lambda:${opt:region}:${self:custom.accountId}:function:${self:service}-${opt:stage}-upsertEventMap
-                  End: true
